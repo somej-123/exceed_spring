@@ -1,9 +1,35 @@
 package com.blog.exceed.service;
 
-import com.blog.exceed.dto.ChatMessageDto;
+import com.blog.exceed.dao.ChatMessageDao;
+import com.blog.exceed.mapper.ChatMessageMapper;
+import org.springframework.stereotype.Service;
 import java.util.List;
 
-public interface ChatMessageService {
-    ChatMessageDto saveMessage(String content, String role);
-    List<ChatMessageDto> getAllMessages();
+@Service
+public class ChatMessageService {
+    private final ChatMessageMapper chatMessageMapper;
+
+    public ChatMessageService(ChatMessageMapper chatMessageMapper) {
+        this.chatMessageMapper = chatMessageMapper;
+    }
+
+    public List<ChatMessageDao> getAllMessages() {
+        return chatMessageMapper.selectAll();
+    }
+
+    public ChatMessageDao getMessageById(Long id) {
+        return chatMessageMapper.selectById(id);
+    }
+
+    public void saveMessage(ChatMessageDao chatMessage) {
+        chatMessageMapper.insert(chatMessage);
+    }
+
+    public void updateMessage(ChatMessageDao chatMessage) {
+        chatMessageMapper.update(chatMessage);
+    }
+
+    public void deleteMessage(Long id) {
+        chatMessageMapper.delete(id);
+    }
 } 

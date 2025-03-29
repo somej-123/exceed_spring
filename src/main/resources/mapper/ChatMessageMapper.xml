@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blog.exceed.mapper.ChatMessageMapper">
+    <select id="selectAll" resultType="com.blog.exceed.dao.ChatMessageDao">
+        SELECT 
+            id,
+            content,
+            role,
+            created_at as createdAt
+        FROM public.chat_messages;
+    </select>
+    
+    <select id="selectById" resultType="com.blog.exceed.dao.ChatMessageDao">
+        SELECT 
+            id,
+            content,
+            role,
+            created_at as createdAt
+        FROM public.chat_messages 
+        WHERE id = #{id};
+    </select>
+    
+    <insert id="insert" parameterType="com.blog.exceed.dao.ChatMessageDao">
+        INSERT INTO public.chat_messages (
+            content,
+            role,
+            created_at
+        ) VALUES (
+            #{content},
+            #{role},
+            #{createdAt}
+        );
+    </insert>
+    
+    <update id="update" parameterType="com.blog.exceed.dao.ChatMessageDao">
+        UPDATE public.chat_messages
+        SET 
+            content = #{content},
+            role = #{role}
+        WHERE id = #{id};
+    </update>
+    
+    <delete id="delete">
+        DELETE FROM public.chat_messages 
+        WHERE id = #{id};
+    </delete>
+</mapper> 
