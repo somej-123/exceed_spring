@@ -37,6 +37,9 @@ out/
 .vscode/
 
 ### CUSTOM ###
-.yml
+application.yml
+application-prod.yml
+application-dev.yml
 .log
 .history
+.env
