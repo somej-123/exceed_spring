@@ -8,23 +8,26 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/messages")
 public class ChatMessageController {
-    private static final Logger logger = LoggerFactory.getLogger(ChatMessageController.class);
+    // private static final Logger logger = LoggerFactory.getLogger(ChatMessageController.class);
     private final ChatMessageService chatMessageService;
 
     public ChatMessageController(ChatMessageService chatMessageService) {
         this.chatMessageService = chatMessageService;
     }
 
+    @GetMapping("/models")
+    public ResponseEntity<List<Map<String, Object>>> getModels() {
+        return ResponseEntity.ok(chatMessageService.getModels());
+    }
 
     @GetMapping
     public ResponseEntity<List<ChatMessageDao>> getAllMessages() {
-        logger.debug("Getting all messages");
         List<ChatMessageDao> messages = chatMessageService.getAllMessages();
-        logger.debug("Retrieved {} messages", messages.size());
         return ResponseEntity.ok(messages);
     }
 

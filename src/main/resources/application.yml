@@ -27,4 +27,8 @@ logging:
     com.blog.exceed.mapper: DEBUG
     org.mybatis: DEBUG
     org.springframework.jdbc.core: TRACE
-    org.springframework.jdbc.core.StatementCreatorUtils: TRACE 
+    org.springframework.jdbc.core.StatementCreatorUtils: TRACE
+
+ai:
+  api:
+    url: http://127.0.0.1:1234/v1/models 
