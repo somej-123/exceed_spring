@@ -31,4 +31,13 @@ logging:
 
 ai:
   api:
-    url: http://127.0.0.1:1234/v1/models 
+    base-url: http://127.0.0.1:1234
+    endpoints:
+      models: /v1/models
+      chat: /v1/chat/completions
+      completions: /v1/completions
+
+# RestTemplate 설정
+rest-template:
+  connection-timeout: 100000
+  read-timeout: 100000 

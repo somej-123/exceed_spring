@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.blog.exceed.mapper.ChatMessageMapper">
-    <select id="selectAll" resultType="com.blog.exceed.dao.ChatMessageDao">
+
+    <insert id="saveMessage" parameterType="Map">
+        INSERT INTO public.chat_messages (
+            content,
+            role,
+            model,
+            created_at
+        ) VALUES (
+            #{content},
+            #{role},
+            #{model},
+            now()
+        );
+    </insert>
+
+    <!-- <select id="selectAll" resultType="com.blog.exceed.dao.ChatMessageDao">
         SELECT 
             id,
             content,
@@ -43,5 +58,5 @@
     <delete id="delete">
         DELETE FROM public.chat_messages 
         WHERE id = #{id};
-    </delete>
+    </delete> -->
 </mapper> 

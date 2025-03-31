@@ -7,9 +7,12 @@ import java.util.Map;
 
 @Mapper
 public interface ChatMessageMapper {
-    List<ChatMessageDao> selectAll();
-    ChatMessageDao selectById(Long id);
-    void insert(ChatMessageDao chatMessage);
-    void update(ChatMessageDao chatMessage);
-    void delete(Long id);
+
+    void saveMessage(Map<String, Object> saveRequestBody);
+
+    // List<ChatMessageDao> selectAll();
+    // ChatMessageDao selectById(Long id);
+    // void insert(ChatMessageDao chatMessage);
+    // void update(ChatMessageDao chatMessage);
+    // void delete(Long id);
 } 

@@ -14,5 +14,6 @@ public class ChatMessageDao {
     private Long id;
     private String content;
     private String role;
+    private String userId;
     private LocalDateTime createdAt;
 } 
