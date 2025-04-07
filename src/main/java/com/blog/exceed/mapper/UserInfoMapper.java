@@ -6,5 +6,5 @@ import com.blog.exceed.dao.UserInfoDao;
 
 @Mapper
 public interface UserInfoMapper {
-    void insertUserInfo(UserInfoDao userInfoDao);
+    int insertUserInfo(UserInfoDao userInfoDao);
 }
