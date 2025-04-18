@@ -16,4 +16,10 @@
         );
     </insert>
 
+    <select id="selectUserInfo" parameterType="String" resultType="com.blog.exceed.dao.UserInfoDao">
+        SELECT * 
+          FROM public.user_info
+         WHERE user_id = #{userId}
+    </select>
+
 </mapper> 

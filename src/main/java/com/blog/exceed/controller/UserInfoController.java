@@ -1,14 +1,15 @@
 package com.blog.exceed.controller;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Param;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -17,9 +18,10 @@ import com.blog.exceed.dto.RegisterResponse;
 import com.blog.exceed.service.UserInfoService;
 import com.blog.exceed.exception.DuplicateUserException;
 import com.blog.exceed.exception.ErrorCode;
-
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import com.blog.exceed.util.JwtUtil;
+import com.blog.exceed.dto.LoginRequest;
+import com.blog.exceed.dto.LoginResponse;
+import com.blog.exceed.service.TokenBlacklistService;
 
 /**
  * 사용자 관련 API를 처리하는 컨트롤러
@@ -36,13 +38,17 @@ public class UserInfoController {
     private static final Logger logger = LoggerFactory.getLogger(UserInfoController.class);
 
     private final UserInfoService userInfoService;
+    private final JwtUtil jwtUtil;
+    private final TokenBlacklistService tokenBlacklistService;
 
     /**
      * UserInfoService를 주입받는 생성자
      * @param userInfoService 사용자 정보 관련 비즈니스 로직을 처리하는 서비스
      */
-    public UserInfoController(UserInfoService userInfoService) {
+    public UserInfoController(UserInfoService userInfoService, JwtUtil jwtUtil, TokenBlacklistService tokenBlacklistService) {
         this.userInfoService = userInfoService;
+        this.jwtUtil = jwtUtil;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     /**
@@ -80,30 +86,118 @@ public class UserInfoController {
      */
     @PostMapping("/register")
     @Transactional
-    public ResponseEntity<RegisterResponse> register(@RequestBody UserInfoDao userInfoDao) {
-        // 요청 로깅
-        logger.info("회원가입 요청 - 사용자: {}", userInfoDao.getUserId());
+    public ResponseEntity<Map<String, Object>> register(@RequestBody UserInfoDao userInfo) {
+        logger.info("회원가입 요청 - userId: {}", userInfo.getUserId());
         
         try {
-            // 회원가입 처리
-            userInfoService.register(userInfoDao);
+            userInfoService.register(userInfo);
             
-            // 성공 응답 반환
-            return ResponseEntity.ok(RegisterResponse.success());
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "회원가입이 완료되었습니다.");
+            return ResponseEntity.ok(response);
             
-        } catch (DuplicateUserException e) {
-            // 아이디 중복 에러 처리
-            logger.warn("회원가입 실패 - 중복 아이디: {}", userInfoDao.getUserId());
-            return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(RegisterResponse.fail(ErrorCode.DUPLICATE_USER_ID));
-                
         } catch (Exception e) {
-            // 기타 에러 처리
-            logger.error("회원가입 실패 - 서버 오류: {}", e.getMessage());
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(RegisterResponse.fail(ErrorCode.SERVER_ERROR));
+            logger.error("회원가입 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 로그인 API
+     */
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
+        logger.info("로그인 요청 - userId: {}", loginRequest.getUserId());
+        
+        try {
+            // 로그인 처리
+            UserInfoDao userInfo = userInfoService.login(loginRequest.getUserId(), loginRequest.getPassword());
+            
+            // JWT 토큰 생성
+            String token = jwtUtil.generateToken(userInfo.getUserId());
+            
+            // 응답 데이터 구성
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("userId", userInfo.getUserId());
+            response.put("message", "로그인이 성공적으로 완료되었습니다.");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("로그인 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 사용자 정보 조회 API
+     * JWT 토큰이 필요한 보호된 엔드포인트
+     */
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, Object>> getMyInfo(@RequestAttribute("userId") String userId) {
+        logger.info("사용자 정보 조회 요청 - userId: {}", userId);
+        
+        try {
+            UserInfoDao userInfo = userInfoService.getUserInfo(userId);
+            if (userInfo == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("userId", userInfo.getUserId());
+            // 비밀번호는 응답에서 제외
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("사용자 정보 조회 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 로그아웃 API
+     * JWT 토큰이 필요한 보호된 엔드포인트
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(@RequestAttribute("userId") String userId,
+                                                    @RequestHeader("Authorization") String authHeader) {
+        logger.info("로그아웃 요청 - userId: {}", userId);
+        
+        try {
+            // Bearer 토큰에서 실제 JWT 추출
+            String token = authHeader.substring(7);
+            
+            // 토큰의 남은 유효 시간 계산
+            Date expiration = jwtUtil.getExpirationDateFromToken(token);
+            long expirationTime = expiration.getTime();
+            
+            // 토큰을 블랙리스트에 추가
+            tokenBlacklistService.addToBlacklist(token, expirationTime);
+            
+            // 보안을 위해 현재 세션의 인증 정보 제거
+            SecurityContextHolder.clearContext();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "로그아웃이 성공적으로 완료되었습니다.");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("로그아웃 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

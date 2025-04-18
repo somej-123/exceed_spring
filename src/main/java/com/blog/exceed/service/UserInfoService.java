@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.postgresql.util.PSQLException;
 
 import com.blog.exceed.dao.UserInfoDao;
@@ -16,16 +17,15 @@ import com.blog.exceed.exception.DuplicateUserException;
  */
 @Service
 public class UserInfoService {
-    private final UserInfoMapper userInfoMapper;
-
-    public UserInfoService(UserInfoMapper userInfoMapper) {
-        this.userInfoMapper = userInfoMapper;
-    }
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
     private static final Logger logger = LoggerFactory.getLogger(UserInfoService.class);
+    
+    private final UserInfoMapper userInfoMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserInfoService(UserInfoMapper userInfoMapper, PasswordEncoder passwordEncoder) {
+        this.userInfoMapper = userInfoMapper;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     /**
      * 새로운 사용자를 등록하는 메서드
@@ -34,6 +34,7 @@ public class UserInfoService {
      * @throws DuplicateUserException 동일한 사용자 ID가 이미 존재하는 경우
      * @throws RuntimeException 기타 데이터베이스 오류 발생 시
      */
+    @Transactional
     public int register(UserInfoDao userInfoDao) {
         logger.info("registerService: " + userInfoDao.toString());
         
@@ -61,5 +62,29 @@ public class UserInfoService {
             throw new RuntimeException("회원가입 중 오류가 발생했습니다.");
         }
     }
-    
+
+    /**
+     * 로그인 처리
+     */
+    public UserInfoDao login(String userId, String password) {
+        // 사용자 정보 조회
+        UserInfoDao userInfo = userInfoMapper.selectUserInfo(userId);
+        if (userInfo == null) {
+            throw new RuntimeException("존재하지 않는 사용자입니다.");
+        }
+
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(password, userInfo.getPassword())) {
+            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        }
+
+        return userInfo;
+    }
+
+    /**
+     * 사용자 정보 조회
+     */
+    public UserInfoDao getUserInfo(String userId) {
+        return userInfoMapper.selectUserInfo(userId);
+    }
 }

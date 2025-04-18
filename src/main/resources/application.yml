@@ -13,6 +13,10 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+# JWT 설정
+jwt:
+  secret: exceednewsecretkey12345678901234567890123456789012
+
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.blog.exceed.dao
