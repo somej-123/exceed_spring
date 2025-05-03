@@ -200,4 +200,30 @@ public class UserInfoController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    /**
+     * 비밀번호 찾기 API
+     */
+    @PostMapping("/forgotPassword")
+    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody UserInfoDao userInfo) {
+        logger.info("비밀번호 찾기 요청 - userId: {}", userInfo.getUserId());
+        logger.info("비밀번호 찾기 요청 - email: {}", userInfo.getEmail());
+        
+        try {
+            // 비밀번호 찾기 처리
+            boolean forgotPasswordResult = userInfoService.forgotPassword(userInfo);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("isSuccess", forgotPasswordResult);
+            response.put("message", "아이디와 이메일 정보가 존재합니다.");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("아이디와 이메일 정보가 존재하지 않습니다.", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }

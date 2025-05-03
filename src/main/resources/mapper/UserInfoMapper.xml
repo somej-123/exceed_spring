@@ -22,4 +22,13 @@
          WHERE user_id = #{userId}
     </select>
 
+    <select id="forgotPassword" parameterType="com.blog.exceed.dao.UserInfoDao" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+              FROM public.user_info
+             WHERE user_id = #{userId}
+               AND email = #{email}
+        ) as check_id_email
+    </select>
+
 </mapper> 

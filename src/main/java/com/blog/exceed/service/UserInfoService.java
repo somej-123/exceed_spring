@@ -87,4 +87,12 @@ public class UserInfoService {
     public UserInfoDao getUserInfo(String userId) {
         return userInfoMapper.selectUserInfo(userId);
     }
+
+    /**
+     * 비밀번호 찾기 확인
+     */
+    public boolean forgotPassword(UserInfoDao userInfo) {
+        return userInfoMapper.forgotPassword(userInfo);
+    }
+        
 }

@@ -8,4 +8,5 @@ import com.blog.exceed.dao.UserInfoDao;
 public interface UserInfoMapper {
     int insertUserInfo(UserInfoDao userInfoDao);
     UserInfoDao selectUserInfo(String userId);
+    boolean forgotPassword(UserInfoDao userInfo);
 }
