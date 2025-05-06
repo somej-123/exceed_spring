@@ -16,6 +16,7 @@ spring:
 # JWT 설정
 jwt:
   secret: exceednewsecretkey12345678901234567890123456789012
+  refresh-expiration: 1209600000 # 2주
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml

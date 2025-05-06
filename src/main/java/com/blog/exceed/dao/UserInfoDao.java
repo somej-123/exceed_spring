@@ -19,5 +19,6 @@ public class UserInfoDao {
     private Date updatedAt;
     private Boolean isActive;
     private String role;
+    private String refreshToken;
     
 }

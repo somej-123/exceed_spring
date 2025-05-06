@@ -31,4 +31,20 @@
         ) as check_id_email
     </select>
 
+    <update id="changePassword" parameterType="com.blog.exceed.dao.UserInfoDao">
+        UPDATE public.user_info
+           SET password = #{password}
+         WHERE user_id = #{userId}
+    </update>
+
+    <select id="getRefreshTokenByUserId" parameterType="String" resultType="String">
+        SELECT refresh_token FROM public.user_info WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateRefreshToken" parameterType="com.blog.exceed.dao.UserInfoDao">
+        UPDATE public.user_info
+           SET refresh_token = #{refreshToken}
+         WHERE user_id = #{userId}
+    </update>
+
 </mapper> 

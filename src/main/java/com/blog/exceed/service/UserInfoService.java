@@ -94,5 +94,35 @@ public class UserInfoService {
     public boolean forgotPassword(UserInfoDao userInfo) {
         return userInfoMapper.forgotPassword(userInfo);
     }
-        
+
+    /**
+     * 비밀번호 변경
+     */
+    public int changePassword(UserInfoDao userInfo) {
+
+        // 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(userInfo.getPassword());
+        userInfo.setPassword(encodedPassword);
+
+        try {
+            int result = userInfoMapper.changePassword(userInfo);
+            if(result == 0) {
+                throw new RuntimeException("비밀번호 변경 중 오류가 발생했습니다.");
+            }
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException("비밀번호 변경 중 오류가 발생했습니다.");
+        }
+    }
+
+    public String getRefreshTokenByUserId(String userId) {
+        return userInfoMapper.getRefreshTokenByUserId(userId);
+    }
+
+    public void updateRefreshToken(String userId, String refreshToken) {
+        UserInfoDao userInfoDao = new UserInfoDao();
+        userInfoDao.setUserId(userId);
+        userInfoDao.setRefreshToken(refreshToken);
+        userInfoMapper.updateRefreshToken(userInfoDao);
+    }
 }

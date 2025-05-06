@@ -25,6 +25,34 @@
 - Spring Security를 통한 인증 처리
 - 보호된 엔드포인트에 대한 접근 제어
 
+### 리프레시 토큰(Refresh Token) 기반 인증 기능 추가 (2024-06-07)
+
+### 1. 백엔드
+- 로그인 시 access token과 refresh token을 모두 발급, refresh token은 DB(user_info.refresh_token)에 저장
+- access token 만료 시 /api/users/refresh 엔드포인트에서 refresh token으로 새 access/refresh token 재발급
+- JwtUtil에 refresh 토큰 생성/만료 검증 메서드 추가, application.yml에 refresh-expiration(2주) 설정
+- UserInfoService/UserInfoMapper에 refresh token 저장/조회/갱신 메서드 및 쿼리 추가
+- DB user_info 테이블에 refresh_token 컬럼(VARCHAR(512)) 추가 필요
+
+### 2. 프론트엔드(React)
+- 로그인 시 응답의 token, refreshToken 모두 localStorage에 저장
+- access token 만료(401/403) 시 refresh token으로 /api/users/refresh 호출, 새 토큰으로 갱신 후 재시도
+- refresh token도 만료/불일치 시 자동 로그아웃 처리
+
+### 3. API 예시
+- POST /api/users/refresh
+  - 요청: { "refreshToken": "..." }
+  - 응답: { "accessToken": "...", "refreshToken": "...", "userId": "..." }
+
+### 4. DB 컬럼 추가 쿼리
+```sql
+ALTER TABLE public.user_info ADD COLUMN refresh_token VARCHAR(512);
+```
+
+### 5. 기타
+- 기존 회원도 문제없이 사용 가능(컬럼 NULL 허용)
+- refresh token은 보안상 탈취/유출에 주의, 로그아웃 시 반드시 삭제
+
 ## 프로젝트 구조
 
 ```

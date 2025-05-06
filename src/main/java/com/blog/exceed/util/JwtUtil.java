@@ -15,15 +15,28 @@ public class JwtUtil {
     
     private final Key key;
     private final long validityInMilliseconds = 3600000; // 1시간
+    private final long refreshValidityInMilliseconds;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret) {
+    public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.refresh-expiration:1209600000}") long refreshValidityInMilliseconds) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        this.refreshValidityInMilliseconds = refreshValidityInMilliseconds;
     }
 
     public String generateToken(String userId) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
+        return Jwts.builder()
+                .setSubject(userId)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateRefreshToken(String userId) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + refreshValidityInMilliseconds);
         return Jwts.builder()
                 .setSubject(userId)
                 .setIssuedAt(now)

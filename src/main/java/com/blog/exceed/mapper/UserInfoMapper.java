@@ -9,4 +9,7 @@ public interface UserInfoMapper {
     int insertUserInfo(UserInfoDao userInfoDao);
     UserInfoDao selectUserInfo(String userId);
     boolean forgotPassword(UserInfoDao userInfo);
+    int changePassword(UserInfoDao userInfo);
+    String getRefreshTokenByUserId(String userId);
+    int updateRefreshToken(UserInfoDao userInfoDao);
 }

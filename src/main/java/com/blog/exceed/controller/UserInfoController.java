@@ -118,10 +118,13 @@ public class UserInfoController {
             
             // JWT 토큰 생성
             String token = jwtUtil.generateToken(userInfo.getUserId());
+            String refreshToken = jwtUtil.generateRefreshToken(userInfo.getUserId());
+            userInfoService.updateRefreshToken(userInfo.getUserId(), refreshToken);
             
             // 응답 데이터 구성
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
+            response.put("refreshToken", refreshToken);
             response.put("userId", userInfo.getUserId());
             response.put("message", "로그인이 성공적으로 완료되었습니다.");
             
@@ -152,6 +155,14 @@ public class UserInfoController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("userId", userInfo.getUserId());
+            response.put("email", userInfo.getEmail());
+            response.put("nickname", userInfo.getNickname());
+            response.put("createdAt", userInfo.getCreatedAt());
+            response.put("updatedAt", userInfo.getUpdatedAt());
+            response.put("isActive", userInfo.getIsActive());
+            response.put("role", userInfo.getRole());
+
+            
             // 비밀번호는 응답에서 제외
             
             return ResponseEntity.ok(response);
@@ -225,5 +236,64 @@ public class UserInfoController {
             response.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    /**
+     * 비밀번호 변경 API
+     */
+    @PostMapping("/changePassword")
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody UserInfoDao userInfo) {
+        logger.info("비밀번호 변경 요청 - userId: {}", userInfo.getUserId());
+        
+        try {
+            // 비밀번호 찾기 처리
+            int changePasswordResult = userInfoService.changePassword(userInfo);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("isSuccess", changePasswordResult);
+            response.put("message", "비밀번호 변경 완료");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("비밀번호 변경 실패하였습니다.", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 액세스 토큰 재발급 API (refresh 토큰 사용)
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, Object>> refresh(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        Map<String, Object> response = new HashMap<>();
+        if (refreshToken == null) {
+            response.put("error", "refreshToken is required");
+            return ResponseEntity.badRequest().body(response);
+        }
+        // 1. refreshToken 유효성 검증
+        if (!jwtUtil.validateToken(refreshToken)) {
+            response.put("error", "Invalid refresh token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        // 2. refreshToken에서 userId 추출
+        String userId = jwtUtil.getUserIdFromToken(refreshToken);
+        // 3. DB에 저장된 refreshToken과 일치하는지 확인
+        String savedRefreshToken = userInfoService.getRefreshTokenByUserId(userId);
+        if (savedRefreshToken == null || !refreshToken.equals(savedRefreshToken)) {
+            response.put("error", "Refresh token mismatch");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        // 4. 새 accessToken, 새 refreshToken 발급
+        String newAccessToken = jwtUtil.generateToken(userId);
+        String newRefreshToken = jwtUtil.generateRefreshToken(userId);
+        userInfoService.updateRefreshToken(userId, newRefreshToken);
+        response.put("accessToken", newAccessToken);
+        response.put("refreshToken", newRefreshToken);
+        response.put("userId", userId);
+        return ResponseEntity.ok(response);
     }
 }
