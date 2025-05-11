@@ -12,4 +12,5 @@ public interface UserInfoMapper {
     int changePassword(UserInfoDao userInfo);
     String getRefreshTokenByUserId(String userId);
     int updateRefreshToken(UserInfoDao userInfoDao);
+    int updateUserInfo(UserInfoDao userInfo);
 }

@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpHeaders;
 
 import com.blog.exceed.dao.UserInfoDao;
 import com.blog.exceed.dto.RegisterResponse;
@@ -22,6 +24,10 @@ import com.blog.exceed.util.JwtUtil;
 import com.blog.exceed.dto.LoginRequest;
 import com.blog.exceed.dto.LoginResponse;
 import com.blog.exceed.service.TokenBlacklistService;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
+
 
 /**
  * 사용자 관련 API를 처리하는 컨트롤러
@@ -120,19 +126,23 @@ public class UserInfoController {
             String token = jwtUtil.generateToken(userInfo.getUserId());
             String refreshToken = jwtUtil.generateRefreshToken(userInfo.getUserId());
             userInfoService.updateRefreshToken(userInfo.getUserId(), refreshToken);
-            
-            // 응답 데이터 구성
+
+            // 쿠키로 내려주기
+            ResponseCookie accessCookie = ResponseCookie.from("accessToken", token)
+                .httpOnly(true).secure(true).path("/").maxAge(60 * 60).sameSite("Strict").build();
+            ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true).secure(true).path("/").maxAge(14 * 24 * 60 * 60).sameSite("Strict").build();
+
             Map<String, Object> response = new HashMap<>();
-            response.put("token", token);
-            response.put("refreshToken", refreshToken);
             response.put("userId", userInfo.getUserId());
-            response.put("message", "로그인이 성공적으로 완료되었습니다.");
-            
-            return ResponseEntity.ok(response);
-            
+            response.put("message", "로그인 성공");
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(response);
         } catch (Exception e) {
             logger.error("로그인 실패", e);
-            
             Map<String, Object> response = new HashMap<>();
             response.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(response);
@@ -182,30 +192,34 @@ public class UserInfoController {
      */
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(@RequestAttribute("userId") String userId,
-                                                    @RequestHeader("Authorization") String authHeader) {
+                                                    @RequestHeader(value = "Authorization", required = false) String authHeader) {
         logger.info("로그아웃 요청 - userId: {}", userId);
-        
         try {
-            // Bearer 토큰에서 실제 JWT 추출
-            String token = authHeader.substring(7);
-            
-            // 토큰의 남은 유효 시간 계산
-            Date expiration = jwtUtil.getExpirationDateFromToken(token);
-            long expirationTime = expiration.getTime();
-            
-            // 토큰을 블랙리스트에 추가
-            tokenBlacklistService.addToBlacklist(token, expirationTime);
-            
-            // 보안을 위해 현재 세션의 인증 정보 제거
+            String token = null;
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            }
+            // 토큰의 남은 유효 시간 계산 및 블랙리스트 추가
+            if (token != null) {
+                Date expiration = jwtUtil.getExpirationDateFromToken(token);
+                long expirationTime = expiration.getTime();
+                tokenBlacklistService.addToBlacklist(token, expirationTime);
+            }
+            // 인증 정보 제거
             SecurityContextHolder.clearContext();
-            
+            // accessToken, refreshToken 쿠키 만료
+            ResponseCookie expiredAccess = ResponseCookie.from("accessToken", null)
+                .httpOnly(true).secure(true).path("/").maxAge(0).sameSite("Strict").build();
+            ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", null)
+                .httpOnly(true).secure(true).path("/").maxAge(0).sameSite("Strict").build();
             Map<String, Object> response = new HashMap<>();
             response.put("message", "로그아웃이 성공적으로 완료되었습니다.");
-            return ResponseEntity.ok(response);
-            
+            return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, expiredAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, expiredRefresh.toString())
+                .body(response);
         } catch (Exception e) {
             logger.error("로그아웃 실패", e);
-            
             Map<String, Object> response = new HashMap<>();
             response.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(response);
@@ -264,36 +278,63 @@ public class UserInfoController {
     }
 
     /**
-     * 액세스 토큰 재발급 API (refresh 토큰 사용)
+     * 액세스 토큰 재발급 API (refresh 토큰 사용, 쿠키 기반)
      */
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, Object>> refresh(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<?> refresh(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null) {
-            response.put("error", "refreshToken is required");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "refreshToken is missing"));
         }
         // 1. refreshToken 유효성 검증
         if (!jwtUtil.validateToken(refreshToken)) {
-            response.put("error", "Invalid refresh token");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid refresh token"));
         }
         // 2. refreshToken에서 userId 추출
         String userId = jwtUtil.getUserIdFromToken(refreshToken);
         // 3. DB에 저장된 refreshToken과 일치하는지 확인
         String savedRefreshToken = userInfoService.getRefreshTokenByUserId(userId);
         if (savedRefreshToken == null || !refreshToken.equals(savedRefreshToken)) {
-            response.put("error", "Refresh token mismatch");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Refresh token mismatch"));
         }
         // 4. 새 accessToken, 새 refreshToken 발급
         String newAccessToken = jwtUtil.generateToken(userId);
         String newRefreshToken = jwtUtil.generateRefreshToken(userId);
         userInfoService.updateRefreshToken(userId, newRefreshToken);
-        response.put("accessToken", newAccessToken);
-        response.put("refreshToken", newRefreshToken);
-        response.put("userId", userId);
-        return ResponseEntity.ok(response);
+        // httpOnly, secure, path, maxAge 등 옵션 설정 (운영환경에서는 secure(true) 권장, 개발환경은 false로 테스트 가능)
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                .httpOnly(true)
+                .secure(true) // 운영환경에서는 true, 개발환경에서는 false로 변경
+                .path("/")
+                .maxAge(14 * 24 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(Map.of("accessToken", newAccessToken));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<Map<String, Object>> updateUserInfo(@RequestBody UserInfoDao userInfo) {
+        logger.info("회원수정 요청 - userId: {}", userInfo.getUserId());
+        logger.info("회원수정 요청 - email: {}", userInfo.getEmail());
+        logger.info("회원수정 요청 - nickname: {}", userInfo.getNickname());
+        
+        try {
+            userInfoService.updateUserInfo(userInfo);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "회원가입이 완료되었습니다.");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("회원가입 실패", e);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

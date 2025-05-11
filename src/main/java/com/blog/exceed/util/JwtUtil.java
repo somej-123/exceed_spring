@@ -14,11 +14,14 @@ import java.util.Date;
 public class JwtUtil {
     
     private final Key key;
-    private final long validityInMilliseconds = 3600000; // 1시간
+    private final long validityInMilliseconds;
     private final long refreshValidityInMilliseconds;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.refresh-expiration:1209600000}") long refreshValidityInMilliseconds) {
+    public JwtUtil(@Value("${jwt.secret}") String secret,
+                   @Value("${jwt.expiration:5400000}") long validityInMilliseconds, // 1시간 30분(밀리세컨드)
+                   @Value("${jwt.refresh-expiration:1209600000}") long refreshValidityInMilliseconds) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        this.validityInMilliseconds = validityInMilliseconds;
         this.refreshValidityInMilliseconds = refreshValidityInMilliseconds;
     }
 

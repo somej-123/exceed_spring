@@ -47,4 +47,12 @@
          WHERE user_id = #{userId}
     </update>
 
+    <update id="updateUserInfo" parameterType="com.blog.exceed.dao.UserInfoDao">
+        UPDATE public.user_info
+           SET email = #{email},
+               nickname = #{nickname},
+               updated_at = now()
+         WHERE user_id = #{userId}
+    </update>
+
 </mapper> 

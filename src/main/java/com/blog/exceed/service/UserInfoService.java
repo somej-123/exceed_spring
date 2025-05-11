@@ -125,4 +125,8 @@ public class UserInfoService {
         userInfoDao.setRefreshToken(refreshToken);
         userInfoMapper.updateRefreshToken(userInfoDao);
     }
+
+    public int updateUserInfo(UserInfoDao userInfo) {
+        return userInfoMapper.updateUserInfo(userInfo);
+    }
 }
