@@ -128,10 +128,15 @@ public class UserInfoController {
             userInfoService.updateRefreshToken(userInfo.getUserId(), refreshToken);
 
             // 쿠키로 내려주기
+            // TODO: 실제 배포 환경에서는 secure=true, sameSite=Strict 또는 None (None 사용 시 Secure 필수) 사용 고려
+            //       @Value 등을 사용하여 프로필에 따라 동적으로 설정하는 것이 좋음
+            boolean isSecure = true; // 개발 환경에서는 false
+            String sameSitePolicy = "Lax"; // 개발 및 대부분의 환경에서 호환성을 위해 Lax 사용
+
             ResponseCookie accessCookie = ResponseCookie.from("accessToken", token)
-                .httpOnly(true).secure(true).path("/").maxAge(60 * 60).sameSite("Strict").build();
+                .httpOnly(true).secure(isSecure).path("/").maxAge(60 * 60).sameSite(sameSitePolicy).build();
             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true).secure(true).path("/").maxAge(14 * 24 * 60 * 60).sameSite("Strict").build();
+                .httpOnly(true).secure(isSecure).path("/").maxAge(14 * 24 * 60 * 60).sameSite(sameSitePolicy).build();
 
             Map<String, Object> response = new HashMap<>();
             response.put("userId", userInfo.getUserId());

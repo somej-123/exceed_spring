@@ -21,6 +21,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:C:/Project/exceed_spring/src/main/resources/static/images/"); // 또는 "classpath:/static/images/"
+                .addResourceLocations("file:C:/exceedImages/"); // 또는 "classpath:/static/images/"
     }
 } 

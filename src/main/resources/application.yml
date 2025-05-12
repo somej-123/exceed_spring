@@ -55,7 +55,7 @@ rest-template:
 # 블로그 이미지 업로드 경로
 blog:
   image:
-    upload-dir: C:\Project\exceed_spring\src\main\resources\static\images
+    upload-dir: C:\exceedImages
 
 backend:
   url: http://localhost:8080
