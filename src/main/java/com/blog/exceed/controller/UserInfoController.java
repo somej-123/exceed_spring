@@ -115,6 +115,7 @@ public class UserInfoController {
      * 로그인 API
      */
     @PostMapping("/login")
+    @Transactional
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
         logger.info("로그인 요청 - userId: {}", loginRequest.getUserId());
         
@@ -159,6 +160,7 @@ public class UserInfoController {
      * JWT 토큰이 필요한 보호된 엔드포인트
      */
     @GetMapping("/me")
+    @Transactional
     public ResponseEntity<Map<String, Object>> getMyInfo(@RequestAttribute("userId") String userId) {
         logger.info("사용자 정보 조회 요청 - userId: {}", userId);
         
@@ -196,6 +198,7 @@ public class UserInfoController {
      * JWT 토큰이 필요한 보호된 엔드포인트
      */
     @PostMapping("/logout")
+    @Transactional
     public ResponseEntity<Map<String, Object>> logout(@RequestAttribute("userId") String userId,
                                                     @RequestHeader(value = "Authorization", required = false) String authHeader) {
         logger.info("로그아웃 요청 - userId: {}", userId);
@@ -235,6 +238,7 @@ public class UserInfoController {
      * 비밀번호 찾기 API
      */
     @PostMapping("/forgotPassword")
+    @Transactional
     public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody UserInfoDao userInfo) {
         logger.info("비밀번호 찾기 요청 - userId: {}", userInfo.getUserId());
         logger.info("비밀번호 찾기 요청 - email: {}", userInfo.getEmail());
@@ -261,6 +265,7 @@ public class UserInfoController {
      * 비밀번호 변경 API
      */
     @PostMapping("/changePassword")
+    @Transactional
     public ResponseEntity<Map<String, Object>> changePassword(@RequestBody UserInfoDao userInfo) {
         logger.info("비밀번호 변경 요청 - userId: {}", userInfo.getUserId());
         
@@ -286,6 +291,7 @@ public class UserInfoController {
      * 액세스 토큰 재발급 API (refresh 토큰 사용, 쿠키 기반)
      */
     @PostMapping("/refresh")
+    @Transactional
     public ResponseEntity<?> refresh(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
         if (refreshToken == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -322,6 +328,7 @@ public class UserInfoController {
     }
 
     @PutMapping("/me")
+    @Transactional
     public ResponseEntity<Map<String, Object>> updateUserInfo(@RequestBody UserInfoDao userInfo) {
         logger.info("회원수정 요청 - userId: {}", userInfo.getUserId());
         logger.info("회원수정 요청 - email: {}", userInfo.getEmail());

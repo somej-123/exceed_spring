@@ -5,6 +5,7 @@ import com.blog.exceed.service.ChatMessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
@@ -20,12 +21,14 @@ public class ChatMessageController {
 
     // 모델 목록 조회
     @GetMapping("/models")
+    @Transactional
     public ResponseEntity<Map<String, Object>> getModels() {
         return ResponseEntity.ok(chatMessageService.getModels());
     }
 
     // 메세지 전송
     @PostMapping("/send")
+    @Transactional
     public ResponseEntity<Map<String, Object>> sendMessage(@RequestBody Map<String, Object> requestBody) {
 
         logger.info("requestBody: " + requestBody);

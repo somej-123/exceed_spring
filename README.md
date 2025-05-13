@@ -619,3 +619,54 @@ protected void doFilterInternal(HttpServletRequest request,
 **최종 점검:**
 - 테이블 구조, 파일 업로드, 이미지 접근, 에러 처리 등 블로그 백엔드의 핵심 기능을 모두 구현 및 점검함
 - 추가 문의/요구사항 발생 시 README에 계속 업데이트 예정
+
+## 2025-05-13 카테고리 페이징/검색 API 개선 내역
+
+### 개요
+프론트엔드 테이블 페이징 및 검색 요구에 맞춰 카테고리 목록 조회 API를 MyBatis 기반 페이징/검색 지원 구조로 개선하였습니다.
+
+### 주요 변경점
+- `/api/blog/categories` 엔드포인트에서 `page`, `size`, `search` 파라미터를 지원
+- MyBatis XML에서 `LIMIT`, `OFFSET`, `WHERE` 조건을 활용한 페이징/검색 쿼리 적용
+- 전체 카테고리 개수 반환을 위한 count 쿼리 추가
+- 서비스에서 content, totalPages, totalElements, page, size, lastPage 등 프론트엔드에서 바로 사용할 수 있는 응답 구조로 반환
+
+### API 요청 예시
+```
+GET /api/blog/categories?page=1&size=10&search=기술
+```
+
+### 응답 예시
+```json
+{
+  "content": [
+    {
+      "blogCategoryId": 1,
+      "name": "기술",
+      "description": "개발, IT, 프로그래밍 관련 글",
+      "createdAt": "2024-05-13 10:00:00"
+    },
+    ...
+  ],
+  "totalPages": 3,
+  "totalElements": 25,
+  "page": 1,
+  "size": 10,
+  "lastPage": 3
+}
+```
+
+### MyBatis 쿼리 구조
+- `selectBlogCategoriesPaged`: 페이징/검색 적용 SELECT 쿼리
+- `countBlogCategoriesPaged`: 전체 개수 반환 COUNT 쿼리
+
+### 서비스/매퍼 시그니처
+```java
+List<BlogCategoryDao> selectBlogCategoriesPaged(@Param("size") int size, @Param("offset") int offset, @Param("search") String search);
+int countBlogCategoriesPaged(@Param("search") String search);
+```
+
+### 비고
+- 대용량 데이터 환경에서도 효율적으로 동작
+- 프론트엔드에서 page, size, search 파라미터로 자유롭게 요청 가능
+- 기존 전체 조회 API는 유지, 신규 페이징/검색 API로 확장

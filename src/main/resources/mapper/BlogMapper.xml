@@ -16,4 +16,40 @@
     ORDER BY uploaded_at DESC
   </select>
 
+  <insert id="insertBlogCategory" parameterType="com.blog.exceed.dao.BlogCategoryDao">
+    INSERT INTO blog_category
+      (name, description, created_at)
+    VALUES
+      (#{name}, #{description}, now())
+  </insert>
+
+  <select id="selectBlogCategories" resultType="com.blog.exceed.dao.BlogCategoryDao">
+    SELECT blog_category_id, name, description, created_at
+    FROM blog_category
+    ORDER BY created_at DESC
+  </select>
+
+  <select id="selectBlogCategoriesPaged" resultType="com.blog.exceed.dao.BlogCategoryDao">
+    SELECT blog_category_id, name, description, created_at
+    FROM blog_category
+    <where>
+      <if test="search != null and search != ''">
+        (LOWER(name) LIKE CONCAT('%', #{search}, '%')
+        OR LOWER(description) LIKE CONCAT('%', #{search}, '%'))
+      </if>
+    </where>
+    ORDER BY created_at DESC
+    LIMIT #{size} OFFSET #{offset}
+  </select>
+
+  <select id="countBlogCategoriesPaged" resultType="int">
+    SELECT COUNT(*)
+    FROM blog_category
+    <where>
+      <if test="search != null and search != ''">
+        (LOWER(name) LIKE CONCAT('%', #{search}, '%')
+        OR LOWER(description) LIKE CONCAT('%', #{search}, '%'))
+      </if>
+    </where>
+  </select>
 </mapper> 
