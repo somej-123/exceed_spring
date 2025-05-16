@@ -52,4 +52,15 @@
       </if>
     </where>
   </select>
+
+  <select id="selectBlogCategoryById" parameterType="String" resultType="com.blog.exceed.dao.BlogCategoryDao">
+    SELECT blog_category_id, name, description, created_at
+    FROM blog_category
+    WHERE blog_category_id = #{id}::integer
+  </select>
+
+  <delete id="deleteBlogCategory" parameterType="String">
+    DELETE FROM blog_category
+    WHERE blog_category_id = #{id}::integer
+  </delete>
 </mapper> 

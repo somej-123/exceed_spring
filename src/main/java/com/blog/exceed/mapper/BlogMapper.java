@@ -17,4 +17,6 @@ public interface BlogMapper {
     void insertBlogCategory(BlogCategoryDao category);
     List<BlogCategoryDao> selectBlogCategoriesPaged(@Param("size") int size, @Param("offset") int offset, @Param("search") String search);
     int countBlogCategoriesPaged(@Param("search") String search);
+    BlogCategoryDao selectBlogCategoryById(@Param("id") String id);
+    void deleteBlogCategory(@Param("id") String id);
 }

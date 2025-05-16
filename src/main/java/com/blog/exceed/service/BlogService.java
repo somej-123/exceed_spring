@@ -45,6 +45,14 @@ public class BlogService {
         return result;
     }
 
+    public BlogCategoryDao getCategoryById(String id) {
+        return blogMapper.selectBlogCategoryById(id);
+    }
+
+    public void deleteCategory(String id) {
+        blogMapper.deleteBlogCategory(id);
+    }
+
     // public void addBlog(Blog blog) {
     //     blogRepository.save(blog);
     // }

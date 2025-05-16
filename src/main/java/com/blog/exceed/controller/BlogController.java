@@ -108,6 +108,30 @@ public class BlogController {
         
         return ResponseEntity.ok(entity);
     }
+
+    //카테고리 상세 조회
+    @GetMapping("/categories/{id}")
+    public ResponseEntity<?> getCategoryById(@PathVariable("id") String id) {
+        try {
+            BlogCategoryDao entity = blogService.getCategoryById(id);
+            return ResponseEntity.ok(entity);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "카테고리 조회 실패: " + e.getMessage()));
+        }
+    }
+
+    //카테고리 삭제
+    @DeleteMapping("/categories/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteCategory(@PathVariable("id") String id) {
+        try {
+            blogService.deleteCategory(id);
+            return ResponseEntity.ok(Map.of("success", 1));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "카테고리 삭제 실패: " + e.getMessage()));
+        }
+    }
+    
     
 
     // @GetMapping("/images/{filename}")
